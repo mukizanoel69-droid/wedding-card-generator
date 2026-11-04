@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Gate Verification Portal</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f9fafb; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; box-sizing: border-box; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; max-width: 400px; width: 100%; box-sizing: border-box; border-top: 8px solid #6b21a8; }
+        .status-badge { display: inline-block; padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 14px; margin-bottom: 20px; }
+        .status-preview { background-color: #e0f2fe; color: #0369a1; }
+        .status-success { background-color: #dcfce7; color: #15803d; }
+        .status-error { background-color: #fee2e2; color: #b91c1c; }
+        h2 { margin: 0 0 10px 0; color: #111827; }
+        p { margin: 5px 0; color: #4b5563; font-size: 16px; }
+        .action-zone { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.1s ease; }
+        .btn-staff { background-color: #4b5563; color: white; margin-bottom: 10px; }
+        .btn-approve { background-color: #7e22ce; color: white; display: none; box-shadow: 0 4px 6px rgba(126, 34, 206, 0.2); }
+        .btn-approve:hover { background-color: #6b21a8; }
+        input[type="password"] { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; display: none; text-align: center; font-size: 16px; }
+    </style>
+</head>
+<body>
+<div class="card">
+    {% if status == 'invalid' %}
+        <div class="status-badge status-error">❌ INVALID TICKET</div>
+        <h2>Kadi Haipo!</h2>
+        <p>This invitation card does not exist in the verification database registry.</p>
+    {% elif status == 'fraud' %}
+        <div class="status-badge status-error">❌ SECURITY ERROR</div>
+        <h2>Kadi Feki!</h2>
+        <p>Warning: Cryptographic payload alteration detected.</p>
+    {% else %}
+        {% if ticket.used %}
+            <div class="status-badge status-error">❌ IMESHATUMIKA ILISHAPITA</div>
+            <h2 style="color: #b91c1c;">Ilishaingia Tayari!</h2>
+            <p><strong>Mgeni:</strong> {{ ticket.name }}</p>
+            <p><strong>Namba ya Kadi:</strong> {{ ticket_id }}</p>
+            <p style="margin-top: 15px; font-size: 13px; color: #9ca3af;">Scanned/Checked-In at entry gate.</p>
+        {% else %}
+            <div class="status-badge status-preview">ℹ️ GUEST PREVIEW MODE</div>
+            <h2 style="color: #0369a1;">Karibu Kwenye Shuli!</h2>
+            <p><strong>Mgeni:</strong> {{ ticket.name }}</p>
+            <p><strong>Namba ya Kadi:</strong> {{ ticket_id }}</p>
+            <p style="margin-top: 15px; font-size: 13px; color: #0284c7;">This is a safe preview scan. Ticket is still valid.</p>
+            
+            <div class="action-zone">
+                <button id="loginBtn" class="btn btn-staff" onclick="showLoginForm()">Staff Verification Login</button>
+                <form action="/confirm" method="POST">
+                    <input type="hidden" name="id" value="{{ ticket_id }}">
+                    <input type="hidden" name="sig" value="{{ signature }}">
+                    <input type="password" id="passInput" name="password" placeholder="Ingiza Password ya Gateni">
+                    <button type="submit" id="approveBtn" class="btn btn-approve">Approve Gate Entry ✅</button>
+                </form>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+<script>
+    function showLoginForm() {
+        document.getElementById('passInput').style.display = 'block';
+        document.getElementById('approveBtn').style.display = 'block';
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('passInput').focus();
+    }
+</script>
+</body>
+</html>
