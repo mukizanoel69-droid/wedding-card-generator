@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A4 Sheet Secure Invitation Generator</title>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #f3f4f6; margin: 0; padding: 40px 20px; display: flex; justify-content: center; }
+        .container { background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); max-width: 550px; width: 100%; }
+        h2 { color: #111827; margin: 0 0 10px 0; font-size: 24px; }
+        p { color: #4b5563; font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; font-size: 14px; }
+        input[type="file"], input[type="number"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; background-color: #f9fafb; }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        button { width: 100%; background-color: #059669; color: white; padding: 14px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.15s ease; }
+        button:hover { background-color: #047857; }
+        small { color: #6b7280; font-size: 12px; display: block; margin-top: 5px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>A4 Sheet Secure Card Generator</h2>
+    <p>Upload your guest database configuration list to assemble high-speed, print-ready 10-per-sheet portrait A4 PDF cards embedded with dual-mode validation QR matrices.</p>
+    <form action="/generate" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label>1. Guest Spreadsheet List (.xlsx):</label>
+            <input type="file" name="excel_file" accept=".xlsx" required>
+            <small>Must include column headers: <strong>CARD_NO</strong> and <strong>JINA</strong>.</small>
+        </div>
+        <div class="form-group">
+            <label>2. Landscape Card Template Graphic (.png / .jpg):</label>
+            <input type="file" name="template_image" accept="image/*" required>
+        </div>
+        <h3 style="font-size: 15px; color: #111827; margin: 25px 0 10px 0;">Pixel Layout Grid Targeting Adjustments</h3>
+        <div class="grid-inputs">
+            <div><label>Name X (Left):</label><input type="number" name="text_x" value="280"></div>
+            <div><label>Name Y (Top):</label><input type="number" name="name_y" value="815"></div>
+            <div><label>Card No X (Left):</label><input type="number" name="other_y" value="730"></div>
+            <div><label>Card No Y (Top):</label><input type="number" name="card_no_y" value="815"></div>
+        </div>
+        <div class="grid-inputs">
+            <div><label>QR Code X:</label><input type="number" name="qr_x" value="80"></div>
+            <div><label>QR Code Y:</label><input type="number" name="qr_y" value="470"></div>
+        </div>
+        <button type="submit">Compile Sheets & Download PDF</button>
+    </form>
+</div>
+</body>
+</html>
