@@ -5,135 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MKCGS - MFUMO WA KADI BORA, SALAMA NA ZA KISASA</title>
     <style>
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: #f3f4f6;
-            margin: 0;
-            padding: 30px;
-        }
-        .main-title {
-            text-align: center;
-            color: #111827;
-            margin-bottom: 20px;
-        }
-        .workspace {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .panel {
-            background-color: #ffffff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            box-sizing: border-box;
-        }
-        .form-group {
-            margin-bottom: 18px;
-        }
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            color: #374151;
-            font-size: 14px;
-        }
-        input[type="file"], input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        .grid-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            background: #f9fafb;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px dashed #ddd;
-            margin-bottom: 15px;
-        }
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 15px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
-        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #f3f4f6; margin: 0; padding: 30px; }
+        .main-title { text-align: center; color: #111827; margin-bottom: 20px; }
+        .workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 1200px; margin: 0 auto; }
+        .panel { background-color: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #374151; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; background-color: white; }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 15px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         .btn-generate { background-color: #059669; color: white; }
-        .btn-generate:hover { background-color: #047857; }
         .btn-preview { background-color: #2563eb; color: white; }
-        .btn-preview:hover { background-color: #1d4ed8; }
-        
-        /* Preview Panel Layout Styling */
-        .preview-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: #e5e7eb;
-            border: 3px dashed #9ca3af;
-            border-radius: 12px;
-            padding: 20px;
-            min-height: 400px;
-            box-sizing: border-box;
-        }
-        #previewImage {
-            max-width: 100%;
-            max-height: 500px;
-            border-radius: 8px;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            display: none;
-        }
-        .preview-placeholder {
-            color: #4b5563;
-            font-weight: 500;
-            text-align: center;
-        }
+        .preview-box { display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #e5e7eb; border: 3px dashed #9ca3af; border-radius: 12px; padding: 20px; min-height: 450px; }
+        #previewImage { max-width: 100%; max-height: 500px; border-radius: 8px; display: none; box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .section-header { font-size: 14px; color: #1e3a8a; border-bottom: 2px solid #bfdbfe; padding-bottom: 4px; margin: 20px 0 10px 0; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <h2 class="main-title">MKCGS - MFUMO WA KADI BORA, SALAMA NA ZA KISASA</h2>
 
-<!-- Automated Template Sheet Download Banner Asset -->
 <div style="max-width: 1200px; margin: 0 auto 25px auto; padding: 12px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; text-align: center;">
-    <span style="font-size: 14px; color: #166534; font-weight: 500; display: block; margin-bottom: 8px;">
-        Hujui jinsi ya kupanga majina? Pakua mfano hapa chini:
-    </span>
-    <a href="/download-template" style="display: inline-block; background-color: #16a34a; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 13px;">
-        📥 Download Excel Template File
-    </a>
+    <span style="font-size: 14px; color: #166534; font-weight: 500; display: block; margin-bottom: 8px;">Hujui jinsi ya kupanga majina? Pakua mfano hapa chini:</span>
+    <a href="/download-template" style="display: inline-block; background-color: #16a34a; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 13px;">📥 Download Excel Template File</a>
 </div>
 
 <div class="workspace">
-    <!-- LEFT SIDE: CONTROL INPUT PANEL -->
     <div class="panel">
         <form id="mainForm" action="/generate" method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <label>1. Guest Spreadsheet List (.xlsx):</label>
                 <input type="file" name="excel_file" accept=".xlsx" required>
             </div>
-            
             <div class="form-group">
                 <label>2. Card Template Graphic (.png / .jpg):</label>
                 <input type="file" id="templateImageInput" name="template_image" accept="image/*" required>
             </div>
-
-            <div class="form-group" style="background: #eff6ff; padding: 10px; border-radius: 6px; border: 1px solid #bfdbfe;">
-                <label style="color: #1e40af;">3. Test Guest Name for Preview Card:</label>
-                <input type="text" id="previewName" value="LENATUS PETER MVINGE" placeholder="Enter a sample name to test layout">
+            <div class="form-group" style="background: #eff6ff; padding: 10px; border-radius: 6px;">
+                <label style="color: #1e40af;">3. Test Guest Name for Preview:</label>
+                <input type="text" id="previewName" name="preview_name" value="LENATUS PETER MVINGE">
             </div>
 
-            <h3 style="font-size: 14px; color: #111827; margin: 15px 0 8px 0;">Text Grid Layout Adjustments (Pixels)</h3>
+            <div class="section-header">🖋️ Font Style & Color Configurations</div>
+            <div class="grid-inputs">
+                <div>
+                    <label>Font Type Style:</label>
+                    <select id="font_type" name="font_type">
+                        <option value="clean">Clean Sans-Serif</option>
+                        <option value="formal">Elegant Serif</option>
+                        <option value="fancy">Fancy Calligraphy</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Font Text Color:</label>
+                    <select id="font_color" name="font_color">
+                        <option value="#2D0A31">Deep Maroon</option>
+                        <option value="#000000">Jet Black</option>
+                        <option value="#1E3A8A">Royal Blue</option>
+                        <option value="#7C2D12">Golden Amber</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid-inputs">
+                <div><label>Name Size:</label><input type="number" id="font_size" name="font_size" value="36"></div>
+                <div><label>Card No Size:</label><input type="number" id="num_font_size" name="num_font_size" value="36"></div>
+            </div>
+
+            <div class="section-header">📍 Text Positioning Coordinates (Pixels)</div>
             <div class="grid-inputs">
                 <div><label>Name X (Left):</label><input type="number" id="text_x" name="text_x" value="280"></div>
                 <div><label>Name Y (Top):</label><input type="number" id="name_y" name="name_y" value="815"></div>
@@ -141,6 +79,23 @@
                 <div><label>Card No Y (Top):</label><input type="number" id="card_no_y" name="card_no_y" value="815"></div>
             </div>
 
+            <div class="section-header">🖼️ Brand Logo Visibility & Sizing</div>
+            <div class="grid-inputs">
+                <div>
+                    <label>Include Logo?</label>
+                    <select id="show_logo" name="show_logo">
+                        <option value="yes">Yes, Show Logo</option>
+                        <option value="no">No, Hide Logo</option>
+                    </select>
+                </div>
+                <div><label>Logo Size:</label><input type="number" id="logo_size" name="logo_size" value="90"></div>
+            </div>
+            <div class="grid-inputs">
+                <div><label>Logo X:</label><input type="number" id="logo_x" name="logo_x" value="700"></div>
+                <div><label>Logo Y:</label><input type="number" id="logo_y" name="logo_y" value="20"></div>
+            </div>
+
+            <div class="section-header">📱 QR Code Security Placement</div>
             <div class="grid-inputs">
                 <div><label>QR Code X:</label><input type="number" id="qr_x" name="qr_x" value="80"></div>
                 <div><label>QR Code Y:</label><input type="number" id="qr_y" name="qr_y" value="470"></div>
@@ -151,59 +106,48 @@
         </form>
     </div>
 
-    <!-- RIGHT SIDE: LIVE PREVIEW VIEWER LAYER -->
     <div class="preview-box">
-        <div id="placeholderText" class="preview-placeholder">
+        <div id="placeholderText" style="color:#4b5563; text-align:center;">
             🖼️ Live Card Preview Window<br>
-            <span style="font-size: 12px; color: #6b7280; font-weight: normal;">Upload a card image template and tap "Refresh Live Card Preview" to view layout changes instantly.</span>
+            <span style="font-size: 12px; color: #6b7280;">Tap "Refresh Live Card Preview" to see updates.</span>
         </div>
-        <img id="previewImage" src="" alt="Live Card Layout Preview">
+        <img id="previewImage" src="" alt="Card Preview">
     </div>
 </div>
 
-<!-- Simple background browser logic to handle high-speed preview reloading -->
 <script>
     function updateLivePreview() {
-        const imageInput = document.getElementById('templateImageInput');
-        const previewName = document.getElementById('previewName').value;
+        const imgInput = document.getElementById('templateImageInput');
+        if (imgInput.files.length === 0) { alert("Please select a Card Template Graphic first!"); return; }
         
-        if (!imageInput.files[0]) {
-            alert("Please choose a Card Template Graphic image file first before loading the live preview!");
-            return;
-        }
+        const fd = new FormData();
+        fd.append('template_image', imgInput.files[0]);
+        fd.append('preview_name', document.getElementById('previewName').value);
+        fd.append('font_type', document.getElementById('font_type').value);
+        fd.append('font_color', document.getElementById('font_color').value);
+        fd.append('font_size', document.getElementById('font_size').value);
+        fd.append('num_font_size', document.getElementById('num_font_size').value);
+        fd.append('text_x', document.getElementById('text_x').value);
+        fd.append('name_y', document.getElementById('name_y').value);
+        fd.append('card_no_y', document.getElementById('card_no_y').value);
+        fd.append('other_y', document.getElementById('other_y').value);
+        fd.append('show_logo', document.getElementById('show_logo').value);
+        fd.append('logo_size', document.getElementById('logo_size').value);
+        fd.append('logo_x', document.getElementById('logo_x').value);
+        fd.append('logo_y', document.getElementById('logo_y').value);
+        fd.append('qr_x', document.getElementById('qr_x').value);
+        fd.append('qr_y', document.getElementById('qr_y').value);
 
-        // Pack values into form data payload packet strings
-        const formData = new FormData();
-        formData.append('template_image', imageInput.files[0]);
-        formData.append('preview_name', previewName);
-        formData.append('text_x', document.getElementById('text_x').value);
-        formData.append('name_y', document.getElementById('name_y').value);
-        formData.append('card_no_y', document.getElementById('card_no_y').value);
-        formData.append('other_y', document.getElementById('other_y').value);
-        formData.append('qr_x', document.getElementById('qr_x').value);
-        formData.append('qr_y', document.getElementById('qr_y').value);
+        document.getElementById('placeholderText').innerText = "⏳ Rendering layout preview...";
 
-        document.getElementById('placeholderText').innerText = "⏳ Rendering preview graphic, please wait...";
-
-        // Send backend data requests dynamically without refreshing the web layout browser frame
-        fetch('/preview', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.blob())
+        fetch('/preview', { method: 'POST', body: fd })
+        .then(res => res.blob())
         .then(blob => {
-            const url = URL.createObjectURL(blob);
-            const img = document.getElementById('previewImage');
-            img.src = url;
-            img.style.display = 'block';
+            document.getElementById('previewImage').src = URL.createObjectURL(blob);
+            document.getElementById('previewImage').style.display = 'block';
             document.getElementById('placeholderText').style.display = 'none';
-        })
-        .catch(err => {
-            alert("An error occurred during preview generation!");
-            document.getElementById('placeholderText').innerText = "❌ Preview generation failed.";
-        });
+        }).catch(() => { alert("Preview failed."); });
     }
 </script>
-
 </body>
 </html>
