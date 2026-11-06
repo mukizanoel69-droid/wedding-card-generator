@@ -162,6 +162,64 @@ def confirm_entry():
         
     return redirect(url_for('verify_ticket', id=ticket_id, sig=client_signature))
 # --- NEW ROUTE: AUTOMATED EXCEL TEMPLATE DOWNLOAD BAR ---
+# --- NEW ROUTE: INSTANT DYNAMIC CARD PREVIEW LAYER ---
+@app.route('/preview', methods=['POST'])
+def preview_card():
+    template_file = request.files['template_image']
+    guest_name = request.form.get('preview_name', 'LENATUS PETER MVINGE').strip()
+    card_number = "MK-001 TEST"
+    
+    text_x = int(request.form.get('text_x', 280))     
+    name_y = int(request.form.get('name_y', 815))     
+    card_no_y = int(request.form.get('card_no_y', 815)) 
+    other_y = int(request.form.get('other_y', 730))   
+    
+    qr_x_input = int(request.form.get('qr_x', 80))    
+    qr_y_input = int(request.form.get('qr_y', 470))   
+    
+    template_file.seek(0)
+    card_img = Image.open(template_file).convert("RGBA")
+    draw = ImageDraw.Draw(card_img)
+    
+    logo_path = os.path.join(os.path.dirname(__file__), 'logo.png')
+    logo_layer = None
+    if os.path.exists(logo_path):
+        logo_layer = Image.open(logo_path).convert("RGBA")
+        logo_layer = logo_layer.resize((90, 90))
+        card_img.paste(logo_layer, (700, 20), logo_layer)
+        
+    try:
+         font_jina = ImageFont.truetype("DejaVuSans.ttf", 36)
+         font_namba = ImageFont.truetype("DejaVuSans.ttf", 36)
+         font_brand = ImageFont.truetype("DejaVuSans.ttf", 24)
+    except IOError:
+         try:
+             font_jina = ImageFont.truetype("arial.ttf", 36)
+             font_namba = ImageFont.truetype("arial.ttf", 36)
+             font_brand = ImageFont.truetype("arial.ttf", 24)
+         except IOError:
+             font_jina = ImageFont.load_default()
+             font_namba = ImageFont.load_default()
+             font_brand = ImageFont.load_default()
+            
+    draw.text((800, 40), "MK 0621241005", fill="#FFFFFF", font=font_brand)
+    draw.text((text_x, name_y), guest_name, fill="#2D0A31", font=font_jina)
+    draw.text((other_y, card_no_y), card_number, fill="#2D0A31", font=font_namba)
+    
+    # Generate massive easy-to-scan QR matrix image matching Item 6 requirement
+    verification_url = f"https://onrender.com{card_number}&sig=preview_mode"
+    qr = qrcode.QRCode(box_size=4, border=1)
+    qr.add_data(verification_url)
+    qr.make(fit=True)
+    qr_graphic = qr.make_image(fill_color="#1E3A8A", back_color="white").convert("RGBA")
+    qr_graphic = qr_graphic.resize((220, 220)) # High-resolution scale mapping
+    card_img.paste(qr_graphic, (qr_x_input, qr_y_input), qr_graphic)
+    
+    preview_io = io.BytesIO()
+    card_img.convert("RGB").save(preview_io, format="JPEG", quality=95)
+    preview_io.seek(0)
+    
+    return send_file(preview_io, mimetype='image/jpeg')
 @app.route('/download-template')
 def download_template():
     # Create an empty template table structure with your required headers
