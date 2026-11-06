@@ -161,6 +161,30 @@ def confirm_entry():
         TICKET_DATABASE[ticket_id]['used'] = True # Officially check them in
         
     return redirect(url_for('verify_ticket', id=ticket_id, sig=client_signature))
+# --- NEW ROUTE: AUTOMATED EXCEL TEMPLATE DOWNLOAD BAR ---
+@app.route('/download-template')
+def download_template():
+    # Create an empty template table structure with your required headers
+    template_data = {
+        'CARD_NO': ['001', '002', '003'],
+        'JINA': ['Juma Hamisi', 'Anna Wilson', 'Lenatus Peter']
+    }
+    
+    # Pack the structure columns into an openpyxl matrix memory bytes stream
+    df_template = pd.DataFrame(template_data)
+    template_buffer = io.BytesIO()
+    
+    with pd.ExcelWriter(template_buffer, engine='openpyxl') as writer:
+        df_template.to_excel(writer, index=False, sheet_name='Guest List')
+        
+    template_buffer.seek(0)
+    
+    return send_file(
+        template_buffer,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='MKCGS_Guest_Template.xlsx'
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)
