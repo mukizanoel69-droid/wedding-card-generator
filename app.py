@@ -101,7 +101,7 @@ def generate():
         qr.add_data(verification_url)
         qr.make(fit=True)
         qr_graphic = qr.make_image(fill_color="#1E3A8A", back_color="white").convert("RGBA")
-        qr_graphic = qr_graphic.resize((110, 110))
+        qr_graphic = qr_graphic.resize((220, 220))
         card_img.paste(qr_graphic, (qr_x_input, qr_y_input), qr_graphic)
             
         image_stream = io.BytesIO()
