@@ -47,12 +47,15 @@ def generate():
     start_y = 46.0  
     processed_count = 0
     
-    logo_path = os.path.join(os.path.dirname(__file__), 'logo.png')
     logo_layer = None
-    if os.path.exists(logo_path):
-        logo_layer = Image.open(logo_path).convert("RGBA")
-        logo_layer = logo_layer.resize((90, 90))
-    
+    try:
+        logo_path = os.path.join(os.path.dirname(__file__), 'logo.png')
+        if os.path.exists(logo_path):
+            logo_layer = Image.open(logo_path).convert("RGBA")
+            logo_layer = logo_layer.resize((90, 90))
+    except Exception:
+        logo_layer = None # Safely skip if the file is unreadable or missing
+        
     for index, row in df.iterrows():
         card_number = str(row.get('CARD_NO', '')).strip()
         guest_name = str(row.get('JINA', '')).strip()
@@ -71,55 +74,55 @@ def generate():
         card_img = Image.open(template_file).convert("RGBA")
         draw = ImageDraw.Draw(card_img)
         
-    try:
-         # This checks a common Linux font path first
-         font_jina = ImageFont.truetype("DejaVuSans.ttf", 36)
-         font_namba = ImageFont.truetype("DejaVuSans.ttf", 36)
-         font_brand = ImageFont.truetype("DejaVuSans.ttf", 24)
-    except IOError:
-         try:
-             font_jina = ImageFont.truetype("arial.ttf", 36)
-             font_namba = ImageFont.truetype("arial.ttf", 36)
-             font_brand = ImageFont.truetype("arial.ttf", 24)
-         except IOError:
-             font_jina = ImageFont.load_default()
-             font_namba = ImageFont.load_default()
-             font_brand = ImageFont.load_default()
-            
-        # Draw branding texts, logo icons, and client names
-         draw.text((800, 40), "MK 0621241005", fill="#FFFFFF", font=font_brand)
-    if logo_layer:
+        try:
+             # This checks a common Linux font path first
+             font_jina = ImageFont.truetype("DejaVuSans.ttf", 36)
+             font_namba = ImageFont.truetype("DejaVuSans.ttf", 36)
+             font_brand = ImageFont.truetype("DejaVuSans.ttf", 24)
+        except IOError:
+             try:
+                 font_jina = ImageFont.truetype("arial.ttf", 36)
+                 font_namba = ImageFont.truetype("arial.ttf", 36)
+                 font_brand = ImageFont.truetype("arial.ttf", 24)
+             except IOError:
+                 font_jina = ImageFont.load_default()
+                 font_namba = ImageFont.load_default()
+                 font_brand = ImageFont.load_default()
+                
+            # Draw branding texts, logo icons, and client names
+        draw.text((800, 40), "MK 0621241005", fill="#FFFFFF", font=font_brand)
+        if logo_layer:
             card_img.paste(logo_layer, (700, 20), logo_layer)
+                
+        draw.text((text_x, name_y), guest_name, fill="#2D0A31", font=font_jina)
+        draw.text((other_y, card_no_y), card_number, fill="#2D0A31", font=font_namba)
             
-    draw.text((text_x, name_y), guest_name, fill="#2D0A31", font=font_jina)
-    draw.text((other_y, card_no_y), card_number, fill="#2D0A31", font=font_namba)
-        
-    qr = qrcode.QRCode(box_size=4, border=1)
-    qr.add_data(verification_url)
-    qr.make(fit=True)
-    qr_graphic = qr.make_image(fill_color="#1E3A8A", back_color="white").convert("RGBA")
-    qr_graphic = qr_graphic.resize((110, 110))
-    card_img.paste(qr_graphic, (qr_x_input, qr_y_input), qr_graphic)
-        
-    image_stream = io.BytesIO()
-    card_img.convert("RGB").save(image_stream, format="JPEG", quality=98)
-    image_stream.seek(0)
-        
-    row_position_index = (processed_count % 10) // 2
-    column_position_index = (processed_count % 10) % 2
-        
-    computed_x = start_x + column_position_index * CARD_PRINT_WIDTH
-    computed_y = start_y + (4 - row_position_index) * CARD_PRINT_HEIGHT
-        
-    pdf_canvas.drawImage(canvas.ImageReader(image_stream), computed_x, computed_y, width=CARD_PRINT_WIDTH, height=CARD_PRINT_HEIGHT)
-        
-    # Thin grey cutout border guide bounding boxes
-    pdf_canvas.setStrokeColorRGB(0.8, 0.8, 0.8) 
-    pdf_canvas.setLineWidth(0.5)               
-    pdf_canvas.rect(computed_x, computed_y, CARD_PRINT_WIDTH, CARD_PRINT_HEIGHT, stroke=1, fill=0)
-        
-    processed_count += 1
-    if processed_count % 10 == 0 and processed_count < len(df):
+        qr = qrcode.QRCode(box_size=4, border=1)
+        qr.add_data(verification_url)
+        qr.make(fit=True)
+        qr_graphic = qr.make_image(fill_color="#1E3A8A", back_color="white").convert("RGBA")
+        qr_graphic = qr_graphic.resize((110, 110))
+        card_img.paste(qr_graphic, (qr_x_input, qr_y_input), qr_graphic)
+            
+        image_stream = io.BytesIO()
+        card_img.convert("RGB").save(image_stream, format="JPEG", quality=98)
+        image_stream.seek(0)
+            
+        row_position_index = (processed_count % 10) // 2
+        column_position_index = (processed_count % 10) % 2
+            
+        computed_x = start_x + column_position_index * CARD_PRINT_WIDTH
+        computed_y = start_y + (4 - row_position_index) * CARD_PRINT_HEIGHT
+            
+        pdf_canvas.drawImage(canvas.ImageReader(image_stream), computed_x, computed_y, width=CARD_PRINT_WIDTH, height=CARD_PRINT_HEIGHT)
+            
+        # Thin grey cutout border guide bounding boxes
+        pdf_canvas.setStrokeColorRGB(0.8, 0.8, 0.8) 
+        pdf_canvas.setLineWidth(0.5)               
+        pdf_canvas.rect(computed_x, computed_y, CARD_PRINT_WIDTH, CARD_PRINT_HEIGHT, stroke=1, fill=0)
+            
+        processed_count += 1
+        if processed_count % 10 == 0 and processed_count < len(df):
             pdf_canvas.showPage()
             
     pdf_canvas.save()
