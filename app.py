@@ -156,7 +156,8 @@ def generate():
         qr = qrcode.QRCode(box_size=4, border=1)
         qr.add_data(verification_url)
         qr.make(fit=True)
-        qr_graphic = qrcode.make_image(fill_color="#1E3A8A", back_color="white").convert("RGBA").resize((220, 220))
+        # --- FIXED LINE: Uses the object instance 'qr' instead of module name ---
+        qr_graphic = qr.make_image(fill_color="#1E3A8A", back_color="white").convert("RGBA").resize((220, 220))
         card_img.paste(qr_graphic, (qr_x_input, qr_y_input), qr_graphic)
             
         image_stream = io.BytesIO()
