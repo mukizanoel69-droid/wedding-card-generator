@@ -3,3 +3,4 @@ Pillow
 qrcode
 pandas
 reportlab
+gunicorn
