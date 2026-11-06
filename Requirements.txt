@@ -4,3 +4,4 @@ qrcode
 pandas
 reportlab
 gunicorn
+openpyxl
