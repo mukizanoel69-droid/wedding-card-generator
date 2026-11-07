@@ -155,7 +155,11 @@ def generate():
     font_namba = get_custom_font(font_selection, num_font_size)
     font_brand = get_custom_font("clean", 24)
     
+    # SAFE LOGIC: Clean up domain routing scheme for proxies
     host_origin = request.host_url.rstrip('/')
+    if "onrender.com" in host_origin and host_origin.startswith("http://"):
+        host_origin = host_origin.replace("http://", "https://")
+        
     tickets_db = load_tickets()
     
     for index, row in df.iterrows():
@@ -219,17 +223,19 @@ def verify_ticket():
     client_signature = request.args.get('sig')
     
     tickets_db = load_tickets()
+    
+    # SAFE LOGIC: Strict existence drop controls to prevent KeyError crashes
     if not ticket_id or ticket_id not in tickets_db: 
         return render_template('verify.html', status='invalid')
     
-    ticket = tickets_db[ticket_id]
-    if ticket['signature'] != client_signature:
+    ticket = tickets_db.get(ticket_id)
+    if not ticket or ticket.get('signature') != client_signature:
         return render_template('verify.html', status='invalid')
         
-    if ticket['used']:
-        return render_template('verify.html', status='used', name=ticket['name'])
+    if ticket.get('used', False):
+        return render_template('verify.html', status='used', name=ticket.get('name', 'Mgeni'))
         
-    return render_template('verify.html', status='valid', name=ticket['name'], id=ticket_id)
+    return render_template('verify.html', status='valid', name=ticket.get('name', 'Mgeni'), id=ticket_id)
 
 @app.route('/mark-used', methods=['POST'])
 def mark_used():
@@ -243,7 +249,10 @@ def mark_used():
     if ticket_id in tickets_db:
         tickets_db[ticket_id]['used'] = True
         save_tickets(tickets_db)
-        return redirect(url_for('verify_ticket', id=ticket_id, sig=tickets_db[ticket_id]['signature']))
+        
+        signature = tickets_db[ticket_id].get('signature', '')
+        return redirect(url_for('verify_ticket', id=ticket_id, sig=signature))
+        
     return "Ticket not found", 404
 
 if __name__ == '__main__':
