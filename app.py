@@ -1,5 +1,6 @@
 import os
 import io
+import json
 import hashlib
 import pandas as pd
 import qrcode
@@ -10,13 +11,29 @@ from reportlab.pdfgen import canvas
 
 app = Flask(__name__)
 
-TICKET_DATABASE = {}
+DB_FILE = os.path.join(os.path.dirname(__file__), 'tickets.json')
 GATE_PASSWORD = "MK_GATE_TEAM_2026"
 
 A4_WIDTH, A4_HEIGHT = A4
 CARD_PRINT_WIDTH = 255   
 CARD_PRINT_HEIGHT = 150  
 SECRET_SALT = "EnockFarajaWedding2026_SecureKey"
+
+def load_tickets():
+    if os.path.exists(DB_FILE):
+        try:
+            with open(DB_FILE, 'r') as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_tickets(data):
+    try:
+        with open(DB_FILE, 'w') as f:
+            json.dump(data, f)
+    except Exception as e:
+        print(f"Error saving tickets file: {e}")
 
 def get_custom_font(font_selection, text_size):
     try:
@@ -94,7 +111,6 @@ def preview_card():
     buf.seek(0)
     card_img.close()
     return send_file(buf, mimetype='image/jpeg')
-
 @app.route('/generate', methods=['POST'])
 def generate():
     excel_file = request.files['excel_file']
@@ -135,12 +151,12 @@ def generate():
                 logo_layer = Image.open(logo_path).convert("RGBA").resize((logo_size, logo_size), Image.Resampling.NEAREST)
             except Exception: pass
 
-    # HIGH-SPEED OPTIMIZATION: Cache font assets outside the processing loop
     font_jina = get_custom_font(font_selection, font_size)
     font_namba = get_custom_font(font_selection, num_font_size)
     font_brand = get_custom_font("clean", 24)
     
     host_origin = request.host_url.rstrip('/')
+    tickets_db = load_tickets()
     
     for index, row in df.iterrows():
         card_number = str(row.get('CARD_NO', '')).strip()
@@ -152,7 +168,7 @@ def generate():
         security_hash = hashlib.sha256(f"{card_number}{SECRET_SALT}".encode()).hexdigest()[:10]
         verification_url = f"{host_origin}/verify?id={card_number}&sig={security_hash}"
         
-        TICKET_DATABASE[card_number] = {"name": guest_name, "signature": security_hash, "used": False}
+        tickets_db[card_number] = {"name": guest_name, "signature": security_hash, "used": tickets_db.get(card_number, {}).get('used', False)}
         
         card_img = base_template_img.copy()
         draw = ImageDraw.Draw(card_img)
@@ -164,12 +180,11 @@ def generate():
         draw.text((text_x, name_y), guest_name, fill=font_color, font=font_jina)
         draw.text((other_y, card_no_y), card_number, fill=font_color, font=font_namba)
             
-        # HIGH-SPEED OPTIMIZATION: Generate QR using fast low-level single functional calls
         qr_graphic = qrcode.make(verification_url, box_size=4, border=1).convert("RGBA").resize((220, 220), Image.Resampling.NEAREST)
         card_img.paste(qr_graphic, (qr_x_input, qr_y_input), qr_graphic)
             
         image_stream = io.BytesIO()
-        card_img.convert("RGB").save(image_stream, format="JPEG", quality=85) # Dropped quality slightly to reduce rendering pass delays
+        card_img.convert("RGB").save(image_stream, format="JPEG", quality=85)
         image_stream.seek(0)
             
         r_idx = (processed_count % 10) // 2
@@ -189,6 +204,7 @@ def generate():
         if processed_count % 10 == 0 and processed_count < len(df): 
             pdf_canvas.showPage()
             
+    save_tickets(tickets_db)
     base_template_img.close()
     if logo_layer:
         logo_layer.close()
@@ -201,10 +217,12 @@ def generate():
 def verify_ticket():
     ticket_id = request.args.get('id')
     client_signature = request.args.get('sig')
-    if not ticket_id or ticket_id not in TICKET_DATABASE: 
+    
+    tickets_db = load_tickets()
+    if not ticket_id or ticket_id not in tickets_db: 
         return render_template('verify.html', status='invalid')
     
-    ticket = TICKET_DATABASE[ticket_id]
+    ticket = tickets_db[ticket_id]
     if ticket['signature'] != client_signature:
         return render_template('verify.html', status='invalid')
         
@@ -221,10 +239,11 @@ def mark_used():
     if password != GATE_PASSWORD:
         return "Unauthorized: Incorrect Gate Password", 403
         
-    if ticket_id in TICKET_DATABASE:
-        TICKET_DATABASE[ticket_id]['used'] = True
-        return redirect(url_for('verify_ticket', id=ticket_id, sig=TICKET_DATABASE[ticket_id]['signature']))
-        
+    tickets_db = load_tickets()
+    if ticket_id in tickets_db:
+        tickets_db[ticket_id]['used'] = True
+        save_tickets(tickets_db)
+        return redirect(url_for('verify_ticket', id=ticket_id, sig=tickets_db[ticket_id]['signature']))
     return "Ticket not found", 404
 
 if __name__ == '__main__':
