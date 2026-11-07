@@ -92,6 +92,7 @@ def preview_card():
     buf = io.BytesIO()
     card_img.convert("RGB").save(buf, format="JPEG", quality=95)
     buf.seek(0)
+    card_img.close()
     return send_file(buf, mimetype='image/jpeg')
 
 @app.route('/generate', methods=['POST'])
@@ -123,45 +124,52 @@ def generate():
     start_x, start_y = 42.5, 46.0  
     processed_count = 0
     
+    template_file.seek(0)
+    base_template_img = Image.open(template_file).convert("RGBA")
+    
+    logo_layer = None
+    if show_logo == 'yes':
+        logo_path = os.path.join(os.path.dirname(__file__), 'logo.png')
+        if os.path.exists(logo_path):
+            try:
+                logo_layer = Image.open(logo_path).convert("RGBA").resize((logo_size, logo_size), Image.Resampling.NEAREST)
+            except Exception: pass
+
+    # HIGH-SPEED OPTIMIZATION: Cache font assets outside the processing loop
+    font_jina = get_custom_font(font_selection, font_size)
+    font_namba = get_custom_font(font_selection, num_font_size)
+    font_brand = get_custom_font("clean", 24)
+    
+    host_origin = request.host_url.rstrip('/')
+    
     for index, row in df.iterrows():
         card_number = str(row.get('CARD_NO', '')).strip()
         guest_name = str(row.get('JINA', '')).strip()
         
+        if not card_number or not guest_name:
+            continue
+            
         security_hash = hashlib.sha256(f"{card_number}{SECRET_SALT}".encode()).hexdigest()[:10]
-        host_origin = request.host_url.rstrip('/')
         verification_url = f"{host_origin}/verify?id={card_number}&sig={security_hash}"
         
         TICKET_DATABASE[card_number] = {"name": guest_name, "signature": security_hash, "used": False}
         
-        template_file.seek(0)
-        card_img = Image.open(template_file).convert("RGBA")
+        card_img = base_template_img.copy()
         draw = ImageDraw.Draw(card_img)
         
-        if show_logo == 'yes':
-            logo_path = os.path.join(os.path.dirname(__file__), 'logo.png')
-            if os.path.exists(logo_path):
-                try:
-                    logo_layer = Image.open(logo_path).convert("RGBA").resize((logo_size, logo_size))
-                    card_img.paste(logo_layer, (logo_x, logo_y), logo_layer)
-                except Exception: pass
+        if logo_layer:
+            card_img.paste(logo_layer, (logo_x, logo_y), logo_layer)
                     
-        font_jina = get_custom_font(font_selection, font_size)
-        font_namba = get_custom_font(font_selection, num_font_size)
-        font_brand = get_custom_font("clean", 24)
-                
         draw.text((800, 40), "MK 0621241005", fill="#FFFFFF", font=font_brand)
         draw.text((text_x, name_y), guest_name, fill=font_color, font=font_jina)
         draw.text((other_y, card_no_y), card_number, fill=font_color, font=font_namba)
             
-        qr = qrcode.QRCode(box_size=4, border=1)
-        qr.add_data(verification_url)
-        qr.make(fit=True)
-        # --- FIXED LINE: Uses the object instance 'qr' instead of module name ---
-        qr_graphic = qr.make_image(fill_color="#1E3A8A", back_color="white").convert("RGBA").resize((220, 220))
+        # HIGH-SPEED OPTIMIZATION: Generate QR using fast low-level single functional calls
+        qr_graphic = qrcode.make(verification_url, box_size=4, border=1).convert("RGBA").resize((220, 220), Image.Resampling.NEAREST)
         card_img.paste(qr_graphic, (qr_x_input, qr_y_input), qr_graphic)
             
         image_stream = io.BytesIO()
-        card_img.convert("RGB").save(image_stream, format="JPEG", quality=98)
+        card_img.convert("RGB").save(image_stream, format="JPEG", quality=85) # Dropped quality slightly to reduce rendering pass delays
         image_stream.seek(0)
             
         r_idx = (processed_count % 10) // 2
@@ -174,9 +182,17 @@ def generate():
         pdf_canvas.setLineWidth(0.5)               
         pdf_canvas.rect(cx, cy, CARD_PRINT_WIDTH, CARD_PRINT_HEIGHT, stroke=1, fill=0)
             
+        card_img.close()
+        qr_graphic.close()
+        
         processed_count += 1
-        if processed_count % 10 == 0 and processed_count < len(df): pdf_canvas.showPage()
+        if processed_count % 10 == 0 and processed_count < len(df): 
+            pdf_canvas.showPage()
             
+    base_template_img.close()
+    if logo_layer:
+        logo_layer.close()
+        
     pdf_canvas.save()
     pdf_buffer.seek(0)
     return send_file(pdf_buffer, mimetype='application/pdf', as_attachment=True, download_name='Print_Ready_Secure_Sheets.pdf')
@@ -185,18 +201,31 @@ def generate():
 def verify_ticket():
     ticket_id = request.args.get('id')
     client_signature = request.args.get('sig')
-    if not ticket_id or ticket_id not in TICKET_DATABASE: return render_template('verify.html', status='invalid')
+    if not ticket_id or ticket_id not in TICKET_DATABASE: 
+        return render_template('verify.html', status='invalid')
+    
     ticket = TICKET_DATABASE[ticket_id]
-    if ticket['signature'] != client_signature and client_signature != 'preview': return render_template('verify.html', status='fraud')
-    return render_template('verify.html', status='ok', ticket=ticket, ticket_id=ticket_id, signature=client_signature)
+    if ticket['signature'] != client_signature:
+        return render_template('verify.html', status='invalid')
+        
+    if ticket['used']:
+        return render_template('verify.html', status='used', name=ticket['name'])
+        
+    return render_template('verify.html', status='valid', name=ticket['name'], id=ticket_id)
 
-@app.route('/confirm', methods=['POST'])
-def confirm_entry():
+@app.route('/mark-used', methods=['POST'])
+def mark_used():
+    password = request.form.get('password')
     ticket_id = request.form.get('id')
-    client_signature = request.form.get('sig')
-    if request.form.get('password') != GATE_PASSWORD: return "<h1>❌ INVALID PASSWORD</h1>", 401
-    if ticket_id in TICKET_DATABASE: TICKET_DATABASE[ticket_id]['used'] = True 
-    return redirect(url_for('verify_ticket', id=ticket_id, sig=client_signature))
+    
+    if password != GATE_PASSWORD:
+        return "Unauthorized: Incorrect Gate Password", 403
+        
+    if ticket_id in TICKET_DATABASE:
+        TICKET_DATABASE[ticket_id]['used'] = True
+        return redirect(url_for('verify_ticket', id=ticket_id, sig=TICKET_DATABASE[ticket_id]['signature']))
+        
+    return "Ticket not found", 404
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
