@@ -1,5 +1,6 @@
 import os
 import io
+import gc
 import json
 import hashlib
 import pandas as pd
@@ -73,6 +74,7 @@ def preview_card():
     other_y = int(request.form.get('other_y', 730))   
     
     show_logo = request.form.get('show_logo', 'yes')
+    show_phone = request.form.get('show_phone', 'yes')
     logo_size = int(request.form.get('logo_size', 90))
     logo_x = int(request.form.get('logo_x', 700))
     logo_y = int(request.form.get('logo_y', 20))
@@ -96,12 +98,13 @@ def preview_card():
     font_namba = get_custom_font(font_selection, num_font_size)
     font_brand = get_custom_font("clean", 24)
             
-    draw.text((800, 40), "MK 0621241005", fill="#FFFFFF", font=font_brand)
+    if show_phone == 'yes':
+        draw.text((800, 40), "MK 0621241005", fill="#FFFFFF", font=font_brand)
     draw.text((text_x, name_y), guest_name, fill=font_color, font=font_jina)
     draw.text((other_y, card_no_y), "MK-001 TEST", fill=font_color, font=font_namba)
     
     qr = qrcode.QRCode(box_size=4, border=1)
-    qr.add_data("https://onrender.com")
+    qr.add_data("https://jamboletu.com")
     qr.make(fit=True)
     qr_graphic = qr.make_image(fill_color="#1E3A8A", back_color="white").convert("RGBA").resize((220, 220))
     card_img.paste(qr_graphic, (qr_x_input, qr_y_input), qr_graphic)
@@ -130,6 +133,7 @@ def generate():
     other_y = int(request.form.get('other_y', 730))   
     
     show_logo = request.form.get('show_logo', 'yes')
+    show_phone = request.form.get('show_phone', 'yes')
     logo_size = int(request.form.get('logo_size', 90))
     logo_x = int(request.form.get('logo_x', 700))
     logo_y = int(request.form.get('logo_y', 20))
@@ -144,32 +148,38 @@ def generate():
     processed_count = 0
     
     template_file.seek(0)
-    base_template_img = Image.open(template_file).convert("RGBA")
+    base_template_img = Image.open(template_file).convert("RGB")
     
-    logo_layer = None
     if show_logo == 'yes':
         logo_path = os.path.join(os.path.dirname(__file__), 'logo.png')
         if os.path.exists(logo_path):
             try:
-                logo_layer = Image.open(logo_path).convert("RGBA").resize((logo_size, logo_size), Image.Resampling.NEAREST)
-            except Exception: pass
+                logo_layer = Image.open(logo_path).convert("RGBA").resize((logo_size, logo_size), Image.Resampling.BILINEAR)
+                base_template_img.paste(logo_layer, (logo_x, logo_y), logo_layer)
+                logo_layer.close()
+            except Exception:
+                pass
 
     font_jina = get_custom_font(font_selection, font_size)
     font_namba = get_custom_font(font_selection, num_font_size)
     font_brand = get_custom_font("clean", 24)
     
-    # SAFE LOGIC: Clean up domain routing scheme for proxies
+    if show_phone == 'yes':
+        base_draw = ImageDraw.Draw(base_template_img)
+        base_draw.text((800, 40), "MK 0621241005", fill="#FFFFFF", font=font_brand)
+    
     host_origin = request.host_url.rstrip('/')
     if "onrender.com" in host_origin and host_origin.startswith("http://"):
         host_origin = host_origin.replace("http://", "https://")
         
     tickets_db = load_tickets()
+    total_rows = len(df)
     
     for index, row in df.iterrows():
         card_number = str(row.get('CARD_NO', '')).strip()
         guest_name = str(row.get('JINA', '')).strip()
         
-        if not card_number or not guest_name:
+        if not card_number or not guest_name or card_number == 'nan' or guest_name == 'nan':
             continue
             
         security_hash = hashlib.sha256(f"{card_number}{SECRET_SALT}".encode()).hexdigest()[:10]
@@ -185,19 +195,18 @@ def generate():
         
         card_img = base_template_img.copy()
         draw = ImageDraw.Draw(card_img)
-        
-        if logo_layer:
-            card_img.paste(logo_layer, (logo_x, logo_y), logo_layer)
                     
-        draw.text((800, 40), "MK 0621241005", fill="#FFFFFF", font=font_brand)
         draw.text((text_x, name_y), guest_name, fill=font_color, font=font_jina)
         draw.text((other_y, card_no_y), card_number, fill=font_color, font=font_namba)
             
-        qr_graphic = qrcode.make(verification_url, box_size=4, border=1).convert("RGBA").resize((220, 220), Image.Resampling.NEAREST)
-        card_img.paste(qr_graphic, (qr_x_input, qr_y_input), qr_graphic)
+        qr = qrcode.QRCode(version=2, box_size=4, border=1)
+        qr.add_data(verification_url)
+        qr.make(fit=True)
+        qr_graphic = qr.make_image(fill_color="black", back_color="white").convert("RGB").resize((220, 220), Image.Resampling.NEAREST)
+        card_img.paste(qr_graphic, (qr_x_input, qr_y_input))
             
         image_stream = io.BytesIO()
-        card_img.convert("RGB").save(image_stream, format="JPEG", quality=85)
+        card_img.save(image_stream, format="JPEG", quality=72, optimize=False)
         image_stream.seek(0)
             
         r_idx = (processed_count % 10) // 2
@@ -210,17 +219,18 @@ def generate():
         pdf_canvas.setLineWidth(0.5)               
         pdf_canvas.rect(cx, cy, CARD_PRINT_WIDTH, CARD_PRINT_HEIGHT, stroke=1, fill=0)
             
+        image_stream.close()
         card_img.close()
         qr_graphic.close()
         
         processed_count += 1
-        if processed_count % 10 == 0 and processed_count < len(df): 
+        if processed_count % 10 == 0 and processed_count < total_rows: 
             pdf_canvas.showPage()
+        if processed_count % 50 == 0:
+            gc.collect()
             
     save_tickets(tickets_db)
     base_template_img.close()
-    if logo_layer:
-        logo_layer.close()
         
     pdf_canvas.save()
     pdf_buffer.seek(0)
@@ -232,7 +242,6 @@ def verify_ticket():
     
     tickets_db = load_tickets()
     
-    # SAFE LOGIC: Strict existence drop controls to prevent KeyError crashes
     if not ticket_id or ticket_id not in tickets_db: 
         return render_template('verify.html', status='invalid')
     
@@ -290,6 +299,7 @@ def generate_single():
         other_y = int(request.form.get('other_y', 730))   
         
         show_logo = request.form.get('show_logo', 'yes')
+        show_phone = request.form.get('show_phone', 'yes')
         logo_size = int(request.form.get('logo_size', 90))
         logo_x = int(request.form.get('logo_x', 700))
         logo_y = int(request.form.get('logo_y', 20))
@@ -316,7 +326,8 @@ def generate_single():
         font_namba = get_custom_font(font_selection, num_font_size)
         font_brand = get_custom_font("clean", 24)
         
-        draw.text((800, 40), "MK 0621241005", fill="#FFFFFF", font=font_brand)
+        if show_phone == 'yes':
+            draw.text((800, 40), "MK 0621241005", fill="#FFFFFF", font=font_brand)
         draw.text((text_x, name_y), guest_name, fill=font_color, font=font_jina)
         draw.text((other_y, card_no_y), card_number, fill=font_color, font=font_namba)
         
@@ -362,33 +373,47 @@ def generate_single():
 
 @app.route('/dashboard')
 def dashboard():
-    # Serves the visual tracking analytics control panel screen interface
     return render_template('dashboard.html')
 
 @app.route('/api/stats')
 def api_stats():
     try:
+        selected_event = request.args.get('event', 'ALL').strip()
         tickets_db = load_tickets()
-        total_guests = len(tickets_db)
-        checked_in = sum(1 for t in tickets_db.values() if t.get('used', False))
+        
+        unique_events = []
+        latest_event = ""
+        for t in tickets_db.values():
+            ev = t.get('event_title', '').strip()
+            if ev:
+                latest_event = ev
+                if ev not in unique_events:
+                    unique_events.append(ev)
+                    
+        filtered_tickets = {}
+        for card_no, data in tickets_db.items():
+            if selected_event == 'ALL' or data.get('event_title', '').strip() == selected_event:
+                filtered_tickets[card_no] = data
+                
+        total_guests = len(filtered_tickets)
+        checked_in = sum(1 for t in filtered_tickets.values() if t.get('used', False))
         remaining = total_guests - checked_in
         
-        # Build a list of recent arrivals to show on the dashboard stream feed
         recent_arrivals = []
-        if os.path.exists(DB_FILE):
-            # Sort or read records to find who checked in
-            for card_no, data in tickets_db.items():
-                if data.get('used', False):
-                    recent_arrivals.append({
-                        "card_no": card_no,
-                        "name": data.get('name', 'Mgeni')
-                    })
-                    
+        for card_no, data in filtered_tickets.items():
+            if data.get('used', False):
+                recent_arrivals.append({
+                    "card_no": card_no,
+                    "name": data.get('name', 'Mgeni')
+                })
+                
         return {
             "total": total_guests,
             "checked_in": checked_in,
             "remaining": remaining,
-            "recent": recent_arrivals[-5:] # Sends only the last 5 check-ins to keep it fast
+            "recent": recent_arrivals[-5:],
+            "events": unique_events,
+            "latest_event": latest_event
         }
     except Exception as e:
         return {"error": str(e)}, 500

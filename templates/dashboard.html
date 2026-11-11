@@ -19,7 +19,35 @@
             padding: 20px;
             border-radius: 8px;
             text-align: center;
+            margin-bottom: 20px;
+        }
+        .event-header-box {
+            background: #ffffff;
+            border-left: 6px solid #2D0A31;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        .event-title-display {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2D0A31;
+            margin: 0;
+        }
+        select.event-filter {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            background: #f9fafb;
         }
         .stats-grid {
             display: grid;
@@ -61,6 +89,18 @@
         <p>Msimamizi wa Geti: MK 0621241005</p>
     </header>
 
+    <div class="event-header-box">
+        <div>
+            <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; font-weight: bold;">Tukio Linalofuatiliwa (Active Event & Date):</span>
+            <h2 class="event-title-display" id="activeEventBanner">Matukio Yote (All Events)</h2>
+        </div>
+        <div>
+            <select id="eventFilterSelect" class="event-filter" onchange="updateDashboardStats()">
+                <option value="ALL">Matukio Yote (All Events)</option>
+            </select>
+        </div>
+    </div>
+
     <div class="stats-grid">
         <div class="card">
             <h3>Waalikwa Wote (Total)</h3>
@@ -82,22 +122,44 @@
         </div>
         
         <div id="arrivalsFeed">
-            <!-- Dynamic list items will be injected here automatically by Javascript -->
             <p style="text-align: center; color: #9ca3af; padding: 20px;" id="noArrivalsMsg">Hakuna mgeni aliyewasili bado...</p>
         </div>
     </div>
 </div>
 
 <script>
-    // Real-Time Asynchronous Fetch Data Pipeline Engine
     async function updateDashboardStats() {
         try {
-            const response = await fetch('/api/stats');
+            const selectEl = document.getElementById('eventFilterSelect');
+            const selectedEvent = selectEl.value;
+            const response = await fetch('/api/stats?event=' + encodeURIComponent(selectedEvent));
             if (!response.ok) return;
             
             const data = await response.json();
             
-            // 1. Instantly animate and update structural UI numeric counters
+            // Update Event Dropdown dynamically while keeping current selection
+            if (data.events && Array.isArray(data.events)) {
+                const currentVal = selectEl.value;
+                let optionsHtml = '<option value="ALL">Matukio Yote (All Events)</option>';
+                data.events.forEach(ev => {
+                    if (ev) {
+                        const isSel = (ev === currentVal) ? 'selected' : '';
+                        optionsHtml += `<option value="${ev}" ${isSel}>${ev}</option>`;
+                    }
+                });
+                selectEl.innerHTML = optionsHtml;
+            }
+
+            // Update Event Title Banner at top
+            const bannerEl = document.getElementById('activeEventBanner');
+            if (selectEl.value !== 'ALL') {
+                bannerEl.innerText = selectEl.value;
+            } else if (data.latest_event) {
+                bannerEl.innerText = data.latest_event + " (Latest Event)";
+            } else {
+                bannerEl.innerText = "Matukio Yote (All Events)";
+            }
+            
             document.getElementById('statTotal').innerText = data.total || 0;
             document.getElementById('statCheckedIn').innerText = data.checked_in || 0;
             document.getElementById('statRemaining').innerText = data.remaining || 0;
@@ -105,11 +167,8 @@
             const feedContainer = document.getElementById('arrivalsFeed');
             const noMsg = document.getElementById('noArrivalsMsg');
             
-            // 2. Render live arrival items stream loop
             if (data.recent && data.recent.length > 0) {
                 if (noMsg) noMsg.style.display = 'none';
-                
-                // Reverse the array to show the most absolute recent checkout at the top of the feed panel
                 const renderingList = [...data.recent].reverse();
                 
                 feedContainer.innerHTML = renderingList.map(item => `
@@ -125,14 +184,11 @@
                 feedContainer.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 20px;" id="noArrivalsMsg">Hakuna mgeni aliyewasili bado...</p>';
             }
         } catch (err) {
-            console.error("Dashboard stats background pipeline dropped trace: ", err);
+            console.error("Dashboard stats error: ", err);
         }
     }
 
-    // Initialize stats immediately on page visibility boot pass
     updateDashboardStats();
-
-    // Establish a non-blocking background heartbeat interval timer to update records every 5 seconds
     setInterval(updateDashboardStats, 5000);
 </script>
 </body>
