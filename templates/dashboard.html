@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Analytics Dashboard - MK Smart Party</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 20px;
+            color: #1f2937;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header {
+            background: #2D0A31;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .card h3 { margin: 0 0 10px 0; font-size: 16px; color: #4b5563; text-transform: uppercase; }
+        .card .number { font-size: 36px; font-weight: bold; color: #2D0A31; }
+        .feed-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .arrival-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 15px;
+        }
+        .arrival-item:last-child { border-bottom: none; }
+        .arrival-item .name { font-weight: 600; color: #111827; }
+        .arrival-item .badge { background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Live Arrival Analytics Dashboard</h1>
+        <p>Msimamizi wa Geti: MK 0621241005</p>
+    </header>
+
+    <div class="stats-grid">
+        <div class="card">
+            <h3>Waalikwa Wote (Total)</h3>
+            <div class="number" id="statTotal">0</div>
+        </div>
+        <div class="card" style="border-bottom: 4px solid #047857;">
+            <h3>Waliopo Ndani (Checked In)</h3>
+            <div class="number" id="statCheckedIn" style="color: #047857;">0</div>
+        </div>
+        <div class="card">
+            <h3>Wanaosubiriwa (Remaining)</h3>
+            <div class="number" id="statRemaining">0</div>
+        </div>
+    </div>
+    <div class="feed-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; margin-bottom: 15px;">
+            <h2 style="margin: 0; font-size: 18px;">Wageni Waliowasili Hivi Karibuni (Recent Arrivals Feed)</h2>
+            <span style="font-size: 12px; background: #e5e7eb; padding: 4px 10px; border-radius: 20px; font-weight: 500; color: #4b5563;">Inajirefresh Kila Sekunde 5</span>
+        </div>
+        
+        <div id="arrivalsFeed">
+            <!-- Dynamic list items will be injected here automatically by Javascript -->
+            <p style="text-align: center; color: #9ca3af; padding: 20px;" id="noArrivalsMsg">Hakuna mgeni aliyewasili bado...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Real-Time Asynchronous Fetch Data Pipeline Engine
+    async function updateDashboardStats() {
+        try {
+            const response = await fetch('/api/stats');
+            if (!response.ok) return;
+            
+            const data = await response.json();
+            
+            // 1. Instantly animate and update structural UI numeric counters
+            document.getElementById('statTotal').innerText = data.total || 0;
+            document.getElementById('statCheckedIn').innerText = data.checked_in || 0;
+            document.getElementById('statRemaining').innerText = data.remaining || 0;
+            
+            const feedContainer = document.getElementById('arrivalsFeed');
+            const noMsg = document.getElementById('noArrivalsMsg');
+            
+            // 2. Render live arrival items stream loop
+            if (data.recent && data.recent.length > 0) {
+                if (noMsg) noMsg.style.display = 'none';
+                
+                // Reverse the array to show the most absolute recent checkout at the top of the feed panel
+                const renderingList = [...data.recent].reverse();
+                
+                feedContainer.innerHTML = renderingList.map(item => `
+                    <div class="arrival-item">
+                        <div>
+                            <span class="name">${item.name}</span>
+                            <span style="color: #6b7280; font-size: 13px; margin-left: 8px;">(Kadi: ${item.card_no})</span>
+                        </div>
+                        <span class="badge">INGIA SAFI</span>
+                    </div>
+                `).join('');
+            } else {
+                feedContainer.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 20px;" id="noArrivalsMsg">Hakuna mgeni aliyewasili bado...</p>';
+            }
+        } catch (err) {
+            console.error("Dashboard stats background pipeline dropped trace: ", err);
+        }
+    }
+
+    // Initialize stats immediately on page visibility boot pass
+    updateDashboardStats();
+
+    // Establish a non-blocking background heartbeat interval timer to update records every 5 seconds
+    setInterval(updateDashboardStats, 5000);
+</script>
+</body>
+</html>

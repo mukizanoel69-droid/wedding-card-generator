@@ -1,50 +1,490 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sw">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A4 Sheet Secure Invitation Generator</title>
+    <title>Wedding Card Generator System</title>
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #f3f4f6; margin: 0; padding: 40px 20px; display: flex; justify-content: center; }
-        .container { background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); max-width: 550px; width: 100%; }
-        h2 { color: #111827; margin: 0 0 10px 0; font-size: 24px; }
-        p { color: #4b5563; font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; font-size: 14px; }
-        input[type="file"], input[type="number"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; background-color: #f9fafb; }
-        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        button { width: 100%; background-color: #059669; color: white; padding: 14px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.15s ease; }
-        button:hover { background-color: #047857; }
-        small { color: #6b7280; font-size: 12px; display: block; margin-top: 5px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 20px;
+            color: #1f2937;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #2D0A31;
+            color: white;
+            border-radius: 8px;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            background: #e5e7eb;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .tab-btn.active {
+            background: #2D0A31;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        @media (min-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+        h2, h3 {
+            margin-top: 0;
+            color: #2D0A31;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .btn-bulk { background-color: #1e3a8a; }
+        .btn-bulk:hover { background-color: #1e40af; }
+        .btn-single { background-color: #047857; margin-top: 15px; }
+        .btn-single:hover { background-color: #065f46; }
+        .btn-refresh { background-color: #4b5563; margin-bottom: 15px; }
+        .btn-refresh:hover { background-color: #374151; }
+        
+        .preview-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #e5e7eb;
+            padding: 15px;
+            border-radius: 6px;
+            min-height: 400px;
+            border: 2px dashed #9ca3af;
+            box-sizing: border-box;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            background: white;
+            display: block;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>A4 Sheet Secure Card Generator</h2>
-    <p>Upload your guest database configuration list to assemble high-speed, print-ready 10-per-sheet portrait A4 PDF cards embedded with dual-mode validation QR matrices.</p>
-    <form action="/generate" method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label>1. Guest Spreadsheet List (.xlsx):</label>
-            <input type="file" name="excel_file" accept=".xlsx" required>
-            <small>Must include column headers: <strong>CARD_NO</strong> and <strong>JINA</strong>.</small>
+    <header>
+        <h1>Mfumo wa Kadi za Harusi (Secure Card Suite)</h1>
+        <p>Msimamizi: MK 0621241005</p>
+    </header>
+    <div class="tab-buttons">
+        <button class="tab-btn active" id="singleTabBtn" onclick="switchTab('single-tab')">Studio Modu (Single Card Designer)</button>
+        <button class="tab-btn" id="bulkTabBtn" onclick="switchTab('bulk-tab')">Batch Modu (Bulk Excel Generator)</button>
+    </div>
+
+    <!-- 1. BULK EXCEL GENERATOR TAB LAYER -->
+    <div id="bulk-tab" class="tab-content">
+        <div class="panel">
+            <h2>Kutengeneza Kadi kwa Wingi (Bulk Generation via Excel)</h2>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">
+                Pakia faili la Excel lenye nguzo za <strong>CARD_NO</strong> na <strong>JINA</strong> ili kuzalisha karatasi za PDF.
+            </p>
+            <form action="/generate" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="font_type" id="bulkFontType" value="clean">
+                <input type="hidden" name="font_color" id="bulkFontColor" value="#2D0A31">
+                <input type="hidden" name="font_size" id="bulkFontSize" value="36">
+                <input type="hidden" name="num_font_size" id="bulkNumSize" value="36">
+                <input type="hidden" name="text_x" id="bulkTextX" value="280">
+                <input type="hidden" name="name_y" id="bulkNameY" value="815">
+                <input type="hidden" name="card_no_y" id="bulkCardNoY" value="815">
+                <input type="hidden" name="other_y" id="bulkOtherY" value="730">
+                <input type="hidden" name="qr_x" id="bulkQrX" value="80">
+                <input type="hidden" name="qr_y" id="bulkQrY" value="470">
+                <input type="hidden" name="show_logo" value="yes">
+                <input type="hidden" name="logo_size" value="90">
+                <input type="hidden" name="logo_x" value="700">
+                <input type="hidden" name="logo_y" value="20">
+
+                <div class="form-group">
+                    <label>Jina la Tukio na Tarehe (Event Name & Date):</label>
+                    <input type="text" id="bulkEventTitle" name="event_title" placeholder="Andika jina la tukio lako na tarehe hapa (Write your event name and date here)">
+                </div>
+                <div class="form-group">
+                    <label>Nenosiri la Mlinzi wa Getini (Gateman Entry Password):</label>
+                    <input type="text" id="bulkGatePassword" name="gate_password" placeholder="Weka nenosiri la mlinzi (Set gateman verification password)">
+                </div>
+
+                <div class="form-group">
+                    <label>Pakia Excel ya Wageni (.xlsx):</label>
+                    <input type="file" name="excel_file" accept=".xlsx, .xls" required>
+                </div>
+                <div class="form-group">
+                    <label>Pakia Picha ya Muundo wa Kadi (Card Template Image):</label>
+                    <input type="file" id="bulkImageInput" name="template_image" accept="image/*" required>
+                </div>
+                <button type="submit" class="btn btn-bulk">Anza Kuzalisha Kadi Zote (Download Bulk PDF)</button>
+            </form>
+            <div style="margin-top: 15px; text-align: center;">
+                <a href="/download-template" style="color: #1e3a8a; font-weight: 600; text-decoration: none; font-size: 14px;">⬇️ Shusha Mfano wa Excel</a>
+            </div>
         </div>
-        <div class="form-group">
-            <label>2. Landscape Card Template Graphic (.png / .jpg):</label>
-            <input type="file" name="template_image" accept="image/*" required>
+    </div>
+    <div id="single-tab" class="tab-content active">
+        <div class="grid-layout">
+            <div class="panel">
+                <h2>Studio Control Panel</h2>
+                <form action="/generate-single" method="POST" enctype="multipart/form-data" id="singleCardForm">
+                    <div class="form-group">
+                        <label>Picha ya Background (Card Template Background):</label>
+                        <input type="file" id="studioImageInput" name="template_image" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Jina la Tukio na Tarehe (Event Name & Date):</label>
+                        <input type="text" id="studioEventTitle" name="event_title" placeholder="Andika jina la tukio lako na tarehe hapa (Write your event name and date here)">
+                    </div>
+                    <div class="form-group">
+                        <label>Nenosiri la Mlinzi wa Getini (Gateman Entry Password):</label>
+                        <input type="text" id="studioGatePassword" name="gate_password" placeholder="Weka nenosiri la mlinzi (Set gateman verification password)">
+                    </div>
+                    <div class="control-grid">
+                        <div class="form-group">
+                            <label>Jina la Mgeni:</label>
+                            <input type="text" id="studioName" name="guest_name" value="ANDIKA JINA HAPA">
+                        </div>
+                        <div class="form-group">
+                            <label>Namba ya Kadi (Card No):</label>
+                            <input type="text" id="studioCardNo" name="guest_card_no" value="MK-001">
+                        </div>
+                    </div>
+                    <div class="control-grid">
+                        <div class="form-group">
+                            <label>Font Style:</label>
+                            <select id="studioFontType" name="font_type">
+                                <option value="clean">Clean (DejaVuSans)</option>
+                                <option value="formal">Formal (Serif)</option>
+                                <option value="fancy">Fancy (Oblique)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Rangi ya Maandishi:</label>
+                            <input type="color" id="studioFontColor" name="font_color" value="#2D0A31">
+                        </div>
+                    </div>
+
+                    <div class="control-grid">
+                        <div class="form-group">
+                            <label>Size ya Jina (Px):</label>
+                            <input type="number" id="studioFontSize" name="font_size" value="36">
+                        </div>
+                        <div class="form-group">
+                            <label>Size ya Namba (Px):</label>
+                            <input type="number" id="studioNumSize" name="num_font_size" value="36">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mfumo wa Kushusha (Download Format):</label>
+                        <select name="download_format">
+                            <option value="JPEG">JPEG (.jpg)</option>
+                            <option value="PNG">PNG (.png)</option>
+                        </select>
+                    </div>
+
+                    <input type="hidden" id="studioTextX" name="text_x" value="280">
+                    <input type="hidden" id="studioNameY" name="name_y" value="300">
+                    <input type="hidden" id="studioOtherY" name="other_y" value="730">
+                    <input type="hidden" id="studioCardNoY" name="card_no_y" value="300">
+                    <input type="hidden" id="studioQrX" name="qr_x" value="80">
+                    <input type="hidden" id="studioQrY" name="qr_y" value="150">
+                    <input type="hidden" name="show_logo" value="yes">
+                    <input type="hidden" name="logo_size" value="90">
+                    <input type="hidden" name="logo_x" value="700">
+                    <input type="hidden" name="logo_y" value="20">
+
+                    <button type="submit" class="btn btn-single">Shusha Kadi Hii Moja (Download Card Image)</button>
+                </form>
+            </div>
+
+            <div class="panel" style="display: flex; flex-direction: column;">
+                <h2>Uhakiki wa Moja kwa Moja (Live Canvas Studio)</h2>
+                <p style="color: #6b7280; font-size: 14px; margin-bottom: 15px;">
+                    Pakia picha ya muundo wako. **Buruza kwa mkono (Drag & Drop)** maneno na QR code moja kwa moja kurekebisha nafasi!
+                </p>
+                
+                <button type="button" class="btn btn-refresh" onclick="drawCanvas()">🔄 Osha Uhakiki (Refresh Live Preview)</button>
+                
+                <div class="preview-wrapper">
+                    <canvas id="designCanvas"></canvas>
+                    <div id="fallbackText" style="color: #4b5563; font-weight: 500; display:none;">Picha Imepakiwa</div>
+                </div>
+            </div>
+
         </div>
-        <h3 style="font-size: 15px; color: #111827; margin: 25px 0 10px 0;">Pixel Layout Grid Targeting Adjustments</h3>
-        <div class="grid-inputs">
-            <div><label>Name X (Left):</label><input type="number" name="text_x" value="280"></div>
-            <div><label>Name Y (Top):</label><input type="number" name="name_y" value="815"></div>
-            <div><label>Card No X (Left):</label><input type="number" name="other_y" value="730"></div>
-            <div><label>Card No Y (Top):</label><input type="number" name="card_no_y" value="815"></div>
-        </div>
-        <div class="grid-inputs">
-            <div><label>QR Code X:</label><input type="number" name="qr_x" value="80"></div>
-            <div><label>QR Code Y:</label><input type="number" name="qr_y" value="470"></div>
-        </div>
-        <button type="submit">Compile Sheets & Download PDF</button>
-    </form>
+    </div>
 </div>
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.getElementById('singleTabBtn').classList.remove('active');
+        document.getElementById('bulkTabBtn').classList.remove('active');
+        
+        document.getElementById(tabId).classList.add('active');
+        if(tabId === 'single-tab') document.getElementById('singleTabBtn').classList.add('active');
+        if(tabId === 'bulk-tab') document.getElementById('bulkTabBtn').classList.add('active');
+    }
+
+    const canvas = document.getElementById('designCanvas');
+    const ctx = canvas.getContext('2d');
+    const fallbackText = document.getElementById('fallbackText');
+    let baseImage = new Image();
+    let hasImageLoaded = false;
+
+    canvas.width = 1000;
+    canvas.height = 600;
+
+    let elements = {
+        name: { text: "ANDIKA JINA HAPA", x: 280, y: 300, size: 36, width: 200, type: 'text' },
+        cardNo: { text: "MK-001", x: 730, y: 300, size: 36, width: 100, type: 'text' },
+        brand: { text: "MK 0621241005", x: 750, y: 55, size: 24, width: 180, type: 'text' },
+        qr: { x: 80, y: 150, width: 220, height: 220, type: 'box' }
+    };
+
+    let activeElementKey = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    const watchedInputIds = ['studioName', 'studioCardNo', 'studioFontType', 
+                            'studioFontColor', 'studioFontSize', 'studioNumSize',
+                            'studioEventTitle', 'studioGatePassword'];
+
+    document.getElementById('studioImageInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                baseImage.onload = function() {
+                    canvas.width = baseImage.naturalWidth || 1000;
+                    canvas.height = baseImage.naturalHeight || 600;
+                    hasImageLoaded = true;
+                    drawCanvas();
+                };
+                baseImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+            
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            document.getElementById('bulkImageInput').files = dt.files;
+        }
+    });
+
+    function syncFormInputs() {
+        document.getElementById('studioTextX').value = Math.round(elements.name.x);
+        document.getElementById('studioNameY').value = Math.round(elements.name.y);
+        document.getElementById('studioOtherY').value = Math.round(elements.cardNo.x);
+        document.getElementById('studioCardNoY').value = Math.round(elements.cardNo.y);
+        document.getElementById('studioQrX').value = Math.round(elements.qr.x);
+        document.getElementById('studioQrY').value = Math.round(elements.qr.y);
+        
+        document.getElementById('bulkFontType').value = document.getElementById('studioFontType').value;
+        document.getElementById('bulkFontColor').value = document.getElementById('studioFontColor').value;
+        document.getElementById('bulkFontSize').value = document.getElementById('studioFontSize').value;
+        document.getElementById('bulkNumSize').value = document.getElementById('studioNumSize').value;
+        document.getElementById('bulkTextX').value = Math.round(elements.name.x);
+        document.getElementById('bulkNameY').value = Math.round(elements.name.y);
+        document.getElementById('bulkCardNoY').value = Math.round(elements.cardNo.y);
+        document.getElementById('bulkOtherY').value = Math.round(elements.cardNo.x);
+        document.getElementById('bulkQrX').value = Math.round(elements.qr.x);
+        document.getElementById('bulkQrY').value = Math.round(elements.qr.y);
+
+        const studioEvent = document.getElementById('studioEventTitle').value;
+        const studioPass = document.getElementById('studioGatePassword').value;
+        if (studioEvent) document.getElementById('bulkEventTitle').value = studioEvent;
+        if (studioPass) document.getElementById('bulkGatePassword').value = studioPass;
+    }
+    function drawCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (hasImageLoaded) {
+            ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+        } else {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+        }
+
+        elements.name.text = document.getElementById('studioName').value;
+        elements.cardNo.text = document.getElementById('studioCardNo').value;
+        elements.name.size = parseInt(document.getElementById('studioFontSize').value) || 36;
+        elements.cardNo.size = parseInt(document.getElementById('studioNumSize').value) || 36;
+
+        const fontColor = document.getElementById('studioFontColor').value;
+        const fontType = document.getElementById('studioFontType').value;
+        let fontStyleSpec = "sans-serif";
+        if (fontType === "formal") fontStyleSpec = "serif";
+        if (fontType === "fancy") fontStyleSpec = "italic sans-serif";
+
+        ctx.font = `${elements.name.size}px ${fontStyleSpec}`;
+        elements.name.width = ctx.measureText(elements.name.text).width || 200;
+        
+        ctx.font = `${elements.cardNo.size}px ${fontStyleSpec}`;
+        elements.cardNo.width = ctx.measureText(elements.cardNo.text).width || 100;
+
+        ctx.fillStyle = hasImageLoaded ? "#FFFFFF" : "#4b5563";
+        ctx.font = `${elements.brand.size}px sans-serif`;
+        ctx.fillText(elements.brand.text, elements.brand.x, elements.brand.y);
+
+        ctx.fillStyle = fontColor;
+        ctx.font = `${elements.name.size}px ${fontStyleSpec}`;
+        ctx.fillText(elements.name.text, elements.name.x, elements.name.y);
+
+        ctx.font = `${elements.cardNo.size}px ${fontStyleSpec}`;
+        ctx.fillText(elements.cardNo.text, elements.cardNo.x, elements.cardNo.y);
+
+        const qrX = elements.qr.x;
+        const qrY = elements.qr.y;
+        ctx.fillStyle = "#1E3A8A";
+        ctx.fillRect(qrX, qrY, 220, 220);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(qrX + 15, qrY + 15, 190, 190);
+        ctx.fillStyle = "#1E3A8A";
+        ctx.fillRect(qrX + 35, qrY + 35, 50, 50);
+        ctx.fillRect(qrX + 135, qrY + 35, 50, 50);
+        ctx.fillRect(qrX + 35, qrY + 135, 50, 50);
+        ctx.font = "bold 14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("SECURE QR", qrX + 110, qrY + 115);
+        ctx.textAlign = "left"; 
+
+        syncFormInputs();
+    }
+
+    function getMousePos(evt) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+            x: (evt.clientX - rect.left) * scaleX,
+            y: (evt.clientY - rect.top) * scaleY
+        };
+    }
+
+    canvas.addEventListener('mousedown', function(e) {
+        const mousePos = getMousePos(e);
+        
+        for (let key in elements) {
+            let el = elements[key];
+            let isHit = false;
+            
+            if (el.type === 'text') {
+                if (mousePos.x >= el.x && mousePos.x <= el.x + el.width &&
+                    mousePos.y >= el.y - el.size && mousePos.y <= el.y) {
+                    isHit = true;
+                }
+            } else if (el.type === 'box') {
+                if (mousePos.x >= el.x && mousePos.x <= el.x + el.width &&
+                    mousePos.y >= el.y && mousePos.y <= el.y + el.height) {
+                    isHit = true;
+                }
+            }
+            
+            if (isHit) {
+                activeElementKey = key;
+                dragOffsetX = mousePos.x - el.x;
+                dragOffsetY = mousePos.y - el.y;
+                canvas.style.cursor = 'move';
+                break;
+            }
+        }
+    });
+
+    canvas.addEventListener('mousemove', function(e) {
+        if (!activeElementKey) return;
+        const mousePos = getMousePos(e);
+        
+        elements[activeElementKey].x = mousePos.x - dragOffsetX;
+        elements[activeElementKey].y = mousePos.y - dragOffsetY;
+        
+        drawCanvas();
+    });
+
+    window.addEventListener('mouseup', function() {
+        if (activeElementKey) {
+            activeElementKey = null;
+            canvas.style.cursor = 'default';
+        }
+    });
+
+    watchedInputIds.forEach(id => {
+        document.getElementById(id).addEventListener('input', drawCanvas);
+        document.getElementById(id).addEventListener('change', drawCanvas);
+    });
+
+    drawCanvas();
+</script>
 </body>
 </html>
