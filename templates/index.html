@@ -169,10 +169,75 @@
         </select>
     </div>
 
-    <header>
+        <header>
         <h1 data-i18n="main_title">Mfumo wa Kadi za Harusi (Secure Card Suite)</h1>
-        <p>Msimamizi: MK 0621241005 | <a href="/dashboard" style="color: #fde047; font-weight: bold;">📊 Dashboard</a></p>
+        <p style="margin-bottom: 8px;">
+            Karibu, <strong>{{ current_user.username }}</strong> |
+            {% if current_user.is_developer %}
+                <a href="{{ url_for('developer_admin') }}" style="color: #4ade80; font-weight: bold; text-decoration: none;">🛡️ Owner Control Panel</a> |
+            {% endif %}
+            <a href="{{ url_for('logout') }}" style="color: #fca5a5; font-weight: bold; text-decoration: none;">🚪 Logout</a>
+        </p>
     </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div style="padding: 12px; margin-bottom: 15px; border-radius: 6px; font-weight: 600; background: #fef3c7; color: #92400e; border: 1px solid #f59e0b;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- EVENT CREATION & ISOLATED DASHBOARD LINKS -->
+    <div class="panel">
+        <h3>📅 Hatua ya 1: Sajili Tukio Jipya & Fungua Dashboard ya Tukio</h3>
+        <form action="{{ url_for('create_event') }}" method="POST" class="control-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); align-items: end;">
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Jina la Tukio (Event Name) *</label>
+                <input type="text" name="event_title" placeholder="Mfano: Harusi ya Juma & Anna" required>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Tarehe ya Tukio (Event Date) *</label>
+                <input type="date" name="event_date" required>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Nenosiri la Getini (Gate Password)</label>
+                <input type="text" name="gate_password" value="MK_GATE_TEAM_2026">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <button type="submit" class="btn btn-bulk" style="padding: 10px;">+ Sajili Tukio (Create Event)</button>
+            </div>
+        </form>
+
+        {% if events %}
+        <div style="margin-top: 18px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+            <strong>Matukio Yako (Your Events):</strong>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                {% for ev in events %}
+                <div style="border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px; background: var(--input-bg); display: flex; align-items: center; gap: 10px;">
+                    <div>
+                        <div style="font-weight: bold;">{{ ev.title }}</div>
+                        <small style="color: var(--text-muted);">📅 {{ ev.event_date }} •
+                            {% if ev.status == 'approved' %}
+                                <span style="color: #16a34a; font-weight: bold;">✓ Approved</span>
+                            {% elif ev.status == 'pending' %}
+                                <span style="color: #d97706; font-weight: bold;">⏳ Pending Owner Approval</span>
+                            {% else %}
+                                <span style="color: #dc2626; font-weight: bold;">✗ Rejected</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                    <a href="{{ url_for('event_dashboard', event_id=ev.id) }}" style="background: #2D0A31; color: white; padding: 6px 12px; border-radius: 5px; text-decoration: none; font-size: 13px; font-weight: bold;">
+                        📊 Event Dashboard
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
 
     <div class="tab-buttons">
         <button class="tab-btn active" id="singleTabBtn" onclick="switchTab('single-tab')" data-i18n="tab_single">Studio Modu (Single Card Designer)</button>
@@ -200,13 +265,14 @@
                 <input type="hidden" name="logo_x" value="700">
                 <input type="hidden" name="logo_y" value="20">
 
-                <div class="form-group">
-                    <label data-i18n="lbl_event_title">Jina la Tukio na Tarehe (Event Name & Date):</label>
-                    <input type="text" id="bulkEventTitle" name="event_title" placeholder="Andika jina la tukio lako na tarehe hapa (Write your event name and date here)">
-                </div>
-                <div class="form-group">
-                    <label data-i18n="lbl_gate_pass">Nenosiri la Mlinzi wa Getini (Gateman Entry Password):</label>
-                    <input type="text" id="bulkGatePassword" name="gate_password" placeholder="Weka nenosiri la mlinzi (Set gateman verification password)">
+                                <div class="form-group">
+                    <label>Chagua Tukio Lililoidhinishwa (Select Approved Event) *:</label>
+                    <select name="event_id" required>
+                        <option value="">-- Chagua Tukio (Select Approved Event) --</option>
+                        {% for ev in approved_events %}
+                            <option value="{{ ev.id }}">{{ ev.title }} ({{ ev.event_date }})</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
                 <div class="control-grid">
@@ -251,7 +317,20 @@
                         <label data-i18n="lbl_bg">Picha ya Background (Card Template Background):</label>
                         <input type="file" id="studioImageInput" name="template_image" accept="image/*" required>
                     </div>
+                                        <div class="form-group">
+                        <label>Chagua Tukio Lililoidhinishwa (Select Approved Event) *:</label>
+                        <select name="event_id" required>
+                            <option value="">-- Chagua Tukio (Select Approved Event) --</option>
+                            {% for ev in approved_events %}
+                                <option value="{{ ev.id }}">{{ ev.title }} ({{ ev.event_date }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="form-group">
+                        <label>Namba ya Simu ya Mgeni (Guest Phone for Entry SMS/WhatsApp - Optional):</label>
+                        <input type="tel" name="guest_phone" placeholder="Mfano: 0757123456">
+                    </div>
+<div class="form-group">
                         <label data-i18n="lbl_event_title">Jina la Tukio na Tarehe (Event Name & Date):</label>
                         <input type="text" id="studioEventTitle" name="event_title" placeholder="Andika jina la tukio lako na tarehe hapa (Write your event name and date here)">
                     </div>

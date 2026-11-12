@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - JamboLetu Card Studio</title>
+    <link href="https://jsdelivr.net" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #1E3A8A, #2D0A31); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px 0; }
+        .auth-card { max-width: 450px; width: 100%; border-radius: 16px; box-shadow: 0 12px 30px rgba(0,0,0,0.3); }
+        .pw-rule { font-size: 0.8rem; color: #dc3545; }
+        .pw-rule.valid { color: #198754; font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="card auth-card p-4 bg-white">
+    <div class="text-center mb-3">
+        <h3 class="fw-bold text-primary">Create Account</h3>
+        <p class="text-muted small">Join JamboLetu to generate secure event cards</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} py-2 small">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('register') }}">
+        <div class="mb-2">
+            <label class="form-label fw-semibold">Username *</label>
+            <input type="text" name="username" class="form-control" placeholder="Choose a username" required>
+        </div>
+        <div class="mb-2">
+            <label class="form-label fw-semibold">Email Address *</label>
+            <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
+        </div>
+        <div class="mb-2">
+            <label class="form-label fw-semibold">Phone Number (For Gate SMS/WhatsApp Alerts)</label>
+            <input type="tel" name="phone" class="form-control" placeholder="e.g. 0757123456">
+        </div>
+        <div class="mb-2">
+            <label class="form-label fw-semibold">Strong Password *</label>
+            <input type="password" id="password" name="password" class="form-control" placeholder="Create a strong password" required onkeyup="checkStrength()">
+            <div class="mt-1 p-2 bg-light rounded border">
+                <div id="r-len" class="pw-rule">✗ At least 8 characters</div>
+                <div id="r-up" class="pw-rule">✗ At least 1 uppercase letter (A-Z)</div>
+                <div id="r-low" class="pw-rule">✗ At least 1 lowercase letter (a-z)</div>
+                <div id="r-num" class="pw-rule">✗ At least 1 number (0-9)</div>
+                <div id="r-sym" class="pw-rule">✗ At least 1 special character (@, #, $, !, etc.)</div>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Confirm Password *</label>
+            <input type="password" name="confirm_password" class="form-control" placeholder="Re-enter password" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 fw-bold py-2">Register</button>
+    </form>
+
+    <hr>
+    <p class="text-center small mb-0">Already have an account? <a href="{{ url_for('login') }}" class="fw-bold text-decoration-none">Login Here</a></p>
+</div>
+
+<script>
+function checkStrength() {
+    const pw = document.getElementById('password').value;
+    toggleRule('r-len', pw.length >= 8);
+    toggleRule('r-up', /[A-Z]/.test(pw));
+    toggleRule('r-low', /[a-z]/.test(pw));
+    toggleRule('r-num', /\d/.test(pw));
+    toggleRule('r-sym', /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;'~`]/.test(pw));
+}
+function toggleRule(id, passed) {
+    const el = document.getElementById(id);
+    if (passed) {
+        el.classList.add('valid');
+        el.innerText = '✓ ' + el.innerText.slice(2);
+    } else {
+        el.classList.remove('valid');
+        el.innerText = '✗ ' + el.innerText.slice(2);
+    }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Control Panel - JamboLetu</title>
+    <link href="https://jsdelivr.net" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; }
+        .stat-card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark bg-dark px-4 py-3">
+    <span class="navbar-brand fw-bold">🛡️ JamboLetu Master Owner Panel</span>
+    <div>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-light btn-sm me-2">← Card Studio</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">Logout</a>
+    </div>
+</nav>
+
+<div class="container my-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} py-2">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Live System Telemetry Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3 text-center bg-white">
+                <small class="text-muted fw-bold">TOTAL USERS</small>
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_users }}</h3>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3 text-center bg-white">
+                <small class="text-muted fw-bold">ONLINE NOW</small>
+                <h3 class="fw-bold text-success mb-0">{{ stats.online_users }}</h3>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3 text-center bg-white">
+                <small class="text-muted fw-bold">LOGINS TODAY</small>
+                <h3 class="fw-bold text-info mb-0">{{ stats.logins_today }}</h3>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3 text-center bg-white">
+                <small class="text-muted fw-bold">NEW TODAY</small>
+                <h3 class="fw-bold text-secondary mb-0">{{ stats.registrations_today }}</h3>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3 text-center bg-white">
+                <small class="text-muted fw-bold">TOTAL CARDS</small>
+                <h3 class="fw-bold text-dark mb-0">{{ stats.total_cards }}</h3>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="card stat-card p-3 text-center bg-warning bg-opacity-25">
+                <small class="text-dark fw-bold">PENDING EVENTS</small>
+                <h3 class="fw-bold text-danger mb-0">{{ stats.pending_events }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Approval Queue -->
+    <div class="card stat-card p-4 bg-white mb-4">
+        <h5 class="fw-bold mb-3">📋 Event Approval Queue (Global Security Control)</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Event Name</th>
+                        <th>Event Date</th>
+                        <th>Created By</th>
+                        <th>Cards</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ev in events %}
+                    <tr>
+                        <td class="fw-semibold">{{ ev.title }}</td>
+                        <td>{{ ev.event_date }}</td>
+                        <td>{{ ev.creator.username }} <small class="text-muted">({{ ev.creator.email }})</small></td>
+                        <td><span class="badge bg-secondary">{{ ev.tickets|length }}</span></td>
+                        <td>
+                            {% if ev.status == 'approved' %}
+                                <span class="badge bg-success">Approved</span>
+                            {% elif ev.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending Approval</span>
+                            {% else %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ url_for('moderate_event', event_id=ev.id, action='approve') }}" class="d-inline">
+                                <button type="submit" class="btn btn-success btn-sm">✓ Approve</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('moderate_event', event_id=ev.id, action='reject') }}" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">✗ Reject</button>
+                            </form>
+                            <a href="{{ url_for('event_dashboard', event_id=ev.id) }}" class="btn btn-primary btn-sm">Inspect</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Registered Users & Card Generation Metrics -->
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card stat-card p-4 bg-white">
+                <h5 class="fw-bold mb-3">👥 Registered Users & Card Counts</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Username</th>
+                                <th>Email & Phone</th>
+                                <th>Cards Made</th>
+                                <th>Last Seen (UTC)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    {{ u.username }}
+                                    {% if u.is_developer %}<span class="badge bg-dark">OWNER</span>{% endif %}
+                                </td>
+                                <td><small>{{ u.email }}<br>{{ u.phone or 'No phone' }}</small></td>
+                                <td><span class="badge bg-primary">{{ u.cards_generated }}</span></td>
+                                <td><small class="text-muted">{{ u.last_seen.strftime('%Y-%m-%d %H:%M') }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Activity & Error Feed -->
+        <div class="col-lg-5">
+            <div class="card stat-card p-4 bg-white">
+                <h5 class="fw-bold mb-3">🔔 Live System & Security Logs</h5>
+                <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                    {% for log in logs %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between">
+                            <span class="badge {% if log.action_type == 'error' %}bg-danger{% elif log.action_type == 'register' %}bg-success{% elif log.action_type == 'login' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                                {{ log.action_type|upper }}
+                            </span>
+                            <small class="text-muted">{{ log.timestamp.strftime('%m-%d %H:%M') }}</small>
+                        </div>
+                        <small class="d-block mt-1 text-dark">{{ log.details }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
